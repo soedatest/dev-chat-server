@@ -36,13 +36,26 @@ async function setData(data) {
 const server = app.listen(3000, function() {
   console.log('listen 3000')
 })
+
 // Socet
 const io = require('socket.io')(server)
+const room = []
 io.on('connection', function(socket){
-  console.log(socket.id)
+  // Connct Confirm
+  console.log('Client Connect : %s', socket.id)
+  // Room setting
+  socket.on('INIT', function(req) {
+    // クライアントをroomに追加
+    socket.join(req.room)
+    // クライアントに対してメッセージ送信
+    io.to(socket.id).emit('MESSAGE', { message: `この部屋は${req.room}` })
+    // roomに対してメッセージ送信
+    io.to(req.room).emit('MESSAGE', { message: `${socket.id}さんが入室しました` })
+    room[socket.id] = req.room
+  })
   socket.on('SEND', function(data){
-    console.log(date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds() + ' [username]' + data.username + '[message]' + data.message)
-    io.emit('MESSAGE', data)
+    console.log(date.getHours() + ':' + date.getMinutes() + ':' + date.getSeconds() + '[message]' + data.message)
+    io.to(room[socket.id]).emit('MESSAGE', data)
   })
 })
 
